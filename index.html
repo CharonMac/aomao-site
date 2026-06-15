@@ -28,8 +28,8 @@
     /* ========== Theme Floating Button + Panel ========== */
     .theme-toggle {
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      bottom: max(2rem, env(safe-area-inset-bottom, 1rem));
+      right: max(2rem, env(safe-area-inset-right, 1rem));
       width: 48px;
       height: 48px;
       border-radius: 50%;
@@ -50,8 +50,8 @@
 
     .theme-panel {
       position: fixed;
-      bottom: 5.5rem;
-      right: 2rem;
+      bottom: max(5.5rem, calc(env(safe-area-inset-bottom, 1rem) + 3.5rem));
+      right: max(2rem, env(safe-area-inset-right, 1rem));
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -326,6 +326,14 @@
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
       .tech-grid { grid-template-columns: repeat(6, 1fr); }
     }
+    @media (max-width: 400px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 0.95rem; }
+      .section-title { font-size: 1.3rem; }
+      .theme-toggle { width: 44px; height: 44px; font-size: 1.2rem; }
+      .theme-panel { min-width: 140px; padding: 0.8rem; }
+      .theme-opt { padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+    }
 
     /* ========== Fade-in ========== */
     .fade-in {
@@ -528,12 +536,21 @@
     // toggle panel
     const toggleBtn = document.getElementById('themeToggle');
     const panel = document.getElementById('themePanel');
-    toggleBtn.addEventListener('click', (e) => {
+    function togglePanel(e) {
+      e.preventDefault();
       e.stopPropagation();
       panel.classList.toggle('show');
       toggleBtn.classList.toggle('active');
-    });
+    }
+    toggleBtn.addEventListener('click', togglePanel);
+    toggleBtn.addEventListener('touchend', togglePanel);
     document.addEventListener('click', (e) => {
+      if (!panel.contains(e.target) && e.target !== toggleBtn) {
+        panel.classList.remove('show');
+        toggleBtn.classList.remove('active');
+      }
+    });
+    document.addEventListener('touchend', (e) => {
       if (!panel.contains(e.target) && e.target !== toggleBtn) {
         panel.classList.remove('show');
         toggleBtn.classList.remove('active');
@@ -542,11 +559,14 @@
 
     // theme option clicks
     document.querySelectorAll('.theme-opt').forEach(el => {
-      el.addEventListener('click', () => {
+      function selectTheme(e) {
+        e.preventDefault();
         setTheme(el.dataset.theme);
         panel.classList.remove('show');
         toggleBtn.classList.remove('active');
-      });
+      }
+      el.addEventListener('click', selectTheme);
+      el.addEventListener('touchend', selectTheme);
     });
 
     // restore
