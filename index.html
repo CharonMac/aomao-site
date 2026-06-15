@@ -505,6 +505,16 @@
     </div>
   </div>
 
+  <!-- Theme Switcher -->
+  <div class="theme-switcher">
+    <div class="theme-btn dark active" data-theme="" title="默认暗色"></div>
+    <div class="theme-btn midnight" data-theme="midnight" title="午夜紫"></div>
+    <div class="theme-btn ocean" data-theme="ocean" title="深海蓝"></div>
+    <div class="theme-btn forest" data-theme="forest" title="森林绿"></div>
+    <div class="theme-btn sunset" data-theme="sunset" title="日落橙"></div>
+    <div class="theme-btn light" data-theme="light" title="亮色模式"></div>
+  </div>
+
   <!-- Hero -->
   <div class="hero">
     <div class="avatar">🐾</div>
@@ -756,6 +766,26 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Theme switcher
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const theme = btn.dataset.theme;
+        document.body.className = theme ? 'theme-' + theme : '';
+        localStorage.setItem('aomao-theme', theme);
+      });
+    });
+
+    // Restore saved theme
+    const saved = localStorage.getItem('aomao-theme');
+    if (saved) {
+      document.body.className = saved ? 'theme-' + saved : '';
+      document.querySelectorAll('.theme-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.theme === saved);
+      });
+    }
   </script>
 </body>
 </html>
