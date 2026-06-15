@@ -15,6 +15,76 @@
       --accent2: #00cec9;
       --text: #e0e0e0;
       --text2: #888;
+      --hero-glow: rgba(108,92,231,0.15);
+    }
+
+    /* ========== Theme Switcher ========== */
+    .theme-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 1.3rem;
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .theme-btn:hover {
+      transform: scale(1.1) rotate(30deg);
+      border-color: var(--accent);
+    }
+
+    .theme-panel {
+      position: fixed;
+      bottom: 5.5rem;
+      right: 2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      gap: 0.6rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      min-width: 160px;
+    }
+    .theme-panel.show { display: flex; }
+    .theme-panel h4 {
+      font-size: 0.75rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.2rem;
+    }
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 0.7rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .theme-option:hover { background: rgba(255,255,255,0.05); }
+    .theme-option.active { background: rgba(108,92,231,0.15); }
+    .theme-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.1);
     }
 
     body {
@@ -315,6 +385,36 @@
 </head>
 <body>
 
+  <!-- Theme Switcher -->
+  <button class="theme-btn" onclick="togglePanel()" title="切换主题">🎨</button>
+  <div class="theme-panel" id="themePanel">
+    <h4>主题配色</h4>
+    <div class="theme-option active" data-theme="default" onclick="setTheme('default')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #6c5ce7, #00cec9)"></span>
+      🌙 暗夜紫
+    </div>
+    <div class="theme-option" data-theme="ocean" onclick="setTheme('ocean')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #0984e3, #00b894)"></span>
+      🌊 深海蓝
+    </div>
+    <div class="theme-option" data-theme="sunset" onclick="setTheme('sunset')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #e17055, #fdcb6e)"></span>
+      🌅 落日橘
+    </div>
+    <div class="theme-option" data-theme="forest" onclick="setTheme('forest')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #00b894, #55efc4)"></span>
+      🌲 森林绿
+    </div>
+    <div class="theme-option" data-theme="cherry" onclick="setTheme('cherry')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #e84393, #fd79a8)"></span>
+      🌸 樱花粉
+    </div>
+    <div class="theme-option" data-theme="light" onclick="setTheme('light')">
+      <span class="theme-dot" style="background: linear-gradient(135deg, #dfe6e9, #fff)"></span>
+      ☀️ 清爽白
+    </div>
+  </div>
+
   <!-- Hero -->
   <div class="hero">
     <div class="avatar">🐾</div>
@@ -437,7 +537,92 @@
   </footer>
 
   <script>
-    // Typing effect
+    // ========== Theme Switcher ==========
+    const themes = {
+      default: {
+        '--bg': '#0a0a0f', '--card': '#12121a', '--border': '#1e1e2e',
+        '--accent': '#6c5ce7', '--accent2': '#00cec9',
+        '--text': '#e0e0e0', '--text2': '#888',
+        '--hero-glow': 'rgba(108,92,231,0.15)'
+      },
+      ocean: {
+        '--bg': '#0a1628', '--card': '#0f2035', '--border': '#1a3a5c',
+        '--accent': '#0984e3', '--accent2': '#00b894',
+        '--text': '#dfe6e9', '--text2': '#636e72',
+        '--hero-glow': 'rgba(9,132,227,0.15)'
+      },
+      sunset: {
+        '--bg': '#1a0a0a', '--card': '#2a1515', '--border': '#3d2020',
+        '--accent': '#e17055', '--accent2': '#fdcb6e',
+        '--text': '#ffeaa7', '--text2': '#b2bec3',
+        '--hero-glow': 'rgba(225,112,85,0.15)'
+      },
+      forest: {
+        '--bg': '#0a1a0f', '--card': '#0f2515', '--border': '#1a3d20',
+        '--accent': '#00b894', '--accent2': '#55efc4',
+        '--text': '#dfe6e9', '--text2': '#636e72',
+        '--hero-glow': 'rgba(0,184,148,0.15)'
+      },
+      cherry: {
+        '--bg': '#1a0a14', '--card': '#251018', '--border': '#3d1a28',
+        '--accent': '#e84393', '--accent2': '#fd79a8',
+        '--text': '#fab1a0', '--text2': '#b2bec3',
+        '--hero-glow': 'rgba(232,67,147,0.15)'
+      },
+      light: {
+        '--bg': '#f5f6fa', '--card': '#ffffff', '--border': '#dcdde1',
+        '--accent': '#6c5ce7', '--accent2': '#00cec9',
+        '--text': '#2d3436', '--text2': '#636e72',
+        '--hero-glow': 'rgba(108,92,231,0.1)'
+      }
+    };
+
+    function setTheme(name) {
+      const root = document.documentElement;
+      const t = themes[name];
+      for (const [k, v] of Object.entries(t)) {
+        root.style.setProperty(k, v);
+      }
+      // 更新 hero glow
+      const hero = document.querySelector('.hero');
+      if (hero) {
+        hero.style.setProperty('--hero-glow', t['--hero-glow']);
+        hero.style.cssText = hero.style.cssText; // trigger repaint
+      }
+      document.querySelectorAll('.hero').forEach(el => {
+        el.style.background = 'none';
+      });
+      // 更新 pulse 的 radial-gradient
+      const style = document.createElement('style');
+      style.textContent = `.hero::before { background: radial-gradient(circle, ${t['--hero-glow']} 0%, transparent 70%) !important; }`;
+      document.getElementById('themeStyle')?.remove();
+      style.id = 'themeStyle';
+      document.head.appendChild(style);
+
+      // active state
+      document.querySelectorAll('.theme-option').forEach(el => {
+        el.classList.toggle('active', el.dataset.theme === name);
+      });
+
+      localStorage.setItem('aomao-theme', name);
+    }
+
+    function togglePanel() {
+      document.getElementById('themePanel').classList.toggle('show');
+    }
+
+    // 点击外部关闭面板
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.theme-panel') && !e.target.closest('.theme-btn')) {
+        document.getElementById('themePanel').classList.remove('show');
+      }
+    });
+
+    // 恢复上次主题
+    const saved = localStorage.getItem('aomao-theme');
+    if (saved && themes[saved]) setTheme(saved);
+
+    // ========== Typing effect ==========
     const texts = [
       '你好，我是阿毛 👋',
       '大哥的 AI 助手',
