@@ -119,6 +119,34 @@
     }
     .back-btn:hover { border-color: #6c5ce7; color: #a78bfa; }
 
+    /* Voice Chat */
+    .voice-bar {
+      position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+      background: #12122a; border: 1px solid #2a2a55; border-radius: 30px;
+      padding: 0.4rem 1rem; display: none; align-items: center; gap: 0.6rem;
+      z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .voice-bar.show { display: flex; }
+    .voice-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      font-size: 1rem; cursor: pointer; transition: all 0.3s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .voice-btn.mic-on { background: #22c55e; color: #fff; }
+    .voice-btn.mic-off { background: #e74c3c; color: #fff; }
+    .voice-btn:hover { transform: scale(1.1); }
+    .voice-status { font-size: 0.75rem; color: #888; min-width: 40px; }
+    .voice-speakers { display: flex; gap: 0.3rem; }
+    .voice-speaker {
+      width: 28px; height: 28px; border-radius: 50%; background: #2a2a55;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: #aaa; position: relative;
+    }
+    .voice-speaker.speaking { border: 2px solid #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+    .voice-speaker.muted::after {
+      content: '🔇'; position: absolute; bottom: -2px; right: -2px; font-size: 0.5rem;
+    }
+
     @media (max-width: 500px) {
       .quest-slot { width: 50px; height: 50px; }
       .quest-slot .num { font-size: 1rem; }
@@ -261,6 +289,13 @@
     <span class="online">●</span> 已连接 · <span id="status-text">在线</span>
   </div>
 
+  <!-- Voice Chat Bar -->
+  <div class="voice-bar" id="voice-bar">
+    <div class="voice-speakers" id="voice-speakers"></div>
+    <button class="voice-btn mic-on" id="mic-btn" onclick="toggleMic()">🎤</button>
+    <span class="voice-status" id="voice-status">语音</span>
+  </div>
+
 <script>
 // ========== Config ==========
 const QUEST={5:[2,3,2,3,3],6:[2,3,4,3,4],7:[2,3,3,4,4],8:[3,4,4,5,5],9:[3,4,4,5,5],10:[3,4,4,5,5]};
@@ -382,8 +417,12 @@ function handleHostData(fromId, data) {
       if (!players.find(p => p.id === fromId)) {
         players.push({ id: fromId, name: data.name, host: false });
         updateLobby();
-        broadcast({ type: 'player-joined', players, newPlayer: data.name });
+        broadcast({ type: 'player-joined', players, newPlayer: data.name, playerId: fromId });
         toast(data.name + ' 加入了房间', '#22c55e');
+        // Host: call new guest for voice
+        if (localStream) {
+          setTimeout(() => callPeer(fromId), 1000);
+        }
       }
       break;
     case 'vote':
@@ -450,6 +489,13 @@ function handleGuestData(data) {
       players = data.players;
       G.n = data.n;
       updateLobby();
+      break;
+    case 'player-joined':
+      if (!isHost) break;
+      // Host: call the new guest for voice
+      if (data.playerId && localStream) {
+        setTimeout(() => callPeer(data.playerId), 500);
+      }
       break;
     case 'player-joined':
     case 'player-left':
@@ -1041,7 +1087,7 @@ function showStatus(msg) { document.getElementById('status-bar').style.display='
 
 function backToMenu() {
   if (confirm('确定退出当前游戏吗？')) {
-    // Disconnect all peers
+    stopVoice();
     Object.values(peerConns).forEach(c => { try{c.close()}catch(e){} });
     peerConns = {};
     if (peer) { try{peer.destroy()}catch(e){} peer = null; }
@@ -1051,6 +1097,7 @@ function backToMenu() {
     isHost = false;
     isLocal = false;
     document.getElementById('status-bar').style.display = 'none';
+    document.getElementById('voice-bar').classList.remove('show');
     show('screen-menu');
   }
 }
@@ -1058,6 +1105,132 @@ function backToMenu() {
 function confirmQuit() {
   if (confirm('确定退出游戏吗？')) backToMenu();
 }
+
+// ========== Voice Chat ==========
+let localStream = null;
+let micEnabled = false;
+let remoteStreams = {}; // peerId -> MediaStream
+let voicePeerConns = {}; // peerId -> MediaConnection
+
+async function startVoice() {
+  if (isLocal) return; // No voice in local mode
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    micEnabled = true;
+    updateMicBtn();
+    document.getElementById('voice-bar').classList.add('show');
+
+    if (isHost) {
+      // Host: receive calls from guests
+      peer.on('call', handleIncomingCall);
+    } else {
+      // Guest: call the host
+      callPeer('av-' + roomCode);
+    }
+  } catch(e) {
+    console.warn('Microphone access denied:', e);
+    toast('无法访问麦克风', '#e74c3c');
+  }
+}
+
+function handleIncomingCall(call) {
+  call.answer(localStream); // Answer with our audio
+  call.on('stream', stream => {
+    remoteStreams[call.peer] = stream;
+    renderVoiceSpeakers();
+  });
+  call.on('close', () => {
+    delete remoteStreams[call.peer];
+    renderVoiceSpeakers();
+  });
+  voicePeerConns[call.peer] = call;
+}
+
+function callPeer(peerId) {
+  if (!localStream || !peer) return;
+  const call = peer.call(peerId, localStream);
+  if (!call) return;
+  call.on('stream', stream => {
+    remoteStreams[peerId] = stream;
+    renderVoiceSpeakers();
+  });
+  call.on('close', () => {
+    delete remoteStreams[peerId];
+    renderVoiceSpeakers();
+  });
+  voicePeerConns[peerId] = call;
+}
+
+function toggleMic() {
+  if (!localStream) return;
+  micEnabled = !micEnabled;
+  localStream.getAudioTracks().forEach(t => t.enabled = micEnabled);
+  updateMicBtn();
+}
+
+function updateMicBtn() {
+  const btn = document.getElementById('mic-btn');
+  btn.className = 'voice-btn ' + (micEnabled ? 'mic-on' : 'mic-off');
+  btn.textContent = micEnabled ? '🎤' : '🔇';
+  document.getElementById('voice-status').textContent = micEnabled ? '语音开' : '语音关';
+}
+
+function renderVoiceSpeakers() {
+  const container = document.getElementById('voice-speakers');
+  container.innerHTML = '';
+  const allIds = Object.keys(remoteStreams);
+  allIds.forEach(id => {
+    const stream = remoteStreams[id];
+    const div = document.createElement('div');
+    div.className = 'voice-speaker';
+    // Find player name
+    const p = players.find(x => x.id === id);
+    div.textContent = p ? p.name.charAt(0) : '?';
+    // Check if audio is active
+    if (stream) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const checkLevel = () => {
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a,b)=>a+b,0)/data.length;
+        div.classList.toggle('speaking', avg > 20);
+        requestAnimationFrame(checkLevel);
+      };
+      checkLevel();
+    }
+    container.appendChild(div);
+  });
+}
+
+function stopVoice() {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  Object.values(voicePeerConns).forEach(c => { try{c.close()}catch(e){} });
+  voicePeerConns = {};
+  remoteStreams = {};
+  micEnabled = false;
+  document.getElementById('voice-bar').classList.remove('show');
+}
+
+// Auto-start voice when game starts (online only)
+const origStartGame = window.startLocalGame;
+window.startLocalGame = function() {
+  origStartGame ? origStartGame() : null;
+  document.getElementById('voice-bar').classList.remove('show');
+};
+
+// Hook into online game start
+const origShowNightOnline = showNightOnline;
+showNightOnline = function() {
+  origShowNightOnline();
+  startVoice();
+};
 
 // Override reveal/night for online
 const origReveal = revealRole;
