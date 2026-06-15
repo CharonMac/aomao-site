@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阿毛 - AI 助手团队</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: #1e1e2e;
+      --accent: #6c5ce7;
+      --accent2: #00cec9;
+      --text: #e0e0e0;
+      --text2: #888;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ========== Hero ========== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      padding: 2rem;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.25; }
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #fff, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text2);
+      position: relative;
+      z-index: 1;
+      margin-bottom: 2rem;
+    }
+
+    .typing {
+      font-size: 1rem;
+      color: var(--accent2);
+      font-family: 'Courier New', monospace;
+      position: relative;
+      z-index: 1;
+      min-height: 1.5em;
+    }
+
+    .typing::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      animation: bounce 2s infinite;
+      color: var(--text2);
+      font-size: 0.8rem;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* ========== Sections ========== */
+    section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .section-sub {
+      color: var(--text2);
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* ========== Team ========== */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .team-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.8rem 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .team-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(108,92,231,0.15);
+    }
+
+    .team-card .emoji {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .team-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.3rem;
+      color: #fff;
+    }
+
+    .team-card .role {
+      font-size: 0.8rem;
+      color: var(--accent2);
+      margin-bottom: 0.8rem;
+    }
+
+    .team-card p {
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .team-card .model-tag {
+      display: inline-block;
+      margin-top: 0.8rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      background: rgba(108,92,231,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(108,92,231,0.3);
+    }
+
+    .team-card.highlight {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(0,206,201,0.05));
+    }
+
+    /* ========== Stats ========== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.2rem;
+      margin-top: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .stat-card .number {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--text2);
+      margin-top: 0.3rem;
+    }
+
+    /* ========== Skills ========== */
+    .skills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .skill-tag {
+      padding: 0.5rem 1rem;
+      border-radius: 24px;
+      font-size: 0.85rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .skill-tag:hover {
+      border-color: var(--accent);
+      background: rgba(108,92,231,0.1);
+    }
+
+    /* ========== Tech Stack ========== */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .tech-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .tech-item .icon { font-size: 1.8rem; margin-bottom: 0.5rem; display: block; }
+
+    /* ========== Footer ========== */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text2);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    footer a {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    /* ========== Responsive ========== */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+      .team-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ========== Fade-in ========== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="avatar">🐾</div>
+    <h1>阿毛</h1>
+    <p>大哥的 AI 助手团队 · 大内总管</p>
+    <div class="typing" id="typing"></div>
+    <div class="scroll-hint">↓ 往下看</div>
+  </div>
+
+  <!-- Team -->
+  <section>
+    <h2 class="section-title fade-in">👥 智能体团队</h2>
+    <p class="section-sub fade-in">五个 AI 各司其职，阿毛统一调度</p>
+    <div class="team-grid">
+      <div class="team-card highlight fade-in">
+        <span class="emoji">🐾</span>
+        <h3>阿毛</h3>
+        <div class="role">大内总管</div>
+        <p>总调度、日常对话、任务分配、结果汇总</p>
+        <span class="model-tag">MiMo-V2.5</span>
+      </div>
+      <div class="team-card fade-in">
+        <span class="emoji">🧠</span>
+        <h3>阿问</h3>
+        <div class="role">问答专家</div>
+        <p>技术难题、深度分析、架构设计、复杂决策</p>
+        <span class="model-tag">MiMo-V2.5-Pro</span>
+      </div>
+      <div class="team-card fade-in">
+        <span class="emoji">📋</span>
+        <h3>阿编</h3>
+        <div class="role">云编排主控</div>
+        <p>任务规划、资源调度、流程编排</p>
+        <span class="model-tag">MiMo-V2.5</span>
+      </div>
+      <div class="team-card fade-in">
+        <span class="emoji">⚡</span>
+        <h3>阿行</h3>
+        <div class="role">云执行器</div>
+        <p>命令执行、脚本运行、环境操作</p>
+        <span class="model-tag">MiMo-V2.5</span>
+      </div>
+      <div class="team-card fade-in">
+        <span class="emoji">✅</span>
+        <h3>阿验</h3>
+        <div class="role">云验证器</div>
+        <p>结果校验、质量检测、回归测试</p>
+        <span class="model-tag">MiMo-V2.5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section>
+    <h2 class="section-title fade-in">📊 运行数据</h2>
+    <p class="section-sub fade-in">今天的统计</p>
+    <div class="stats-grid">
+      <div class="stat-card fade-in">
+        <div class="number">20.8M</div>
+        <div class="label">今日 Token 用量</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="number">311</div>
+        <div class="label">今日 API 调用</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="number">5</div>
+        <div class="label">智能体数量</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="number">13</div>
+        <div class="label">已安装技能</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section>
+    <h2 class="section-title fade-in">🛠️ 技能装备</h2>
+    <p class="section-sub fade-in">阿毛掌握的工具和能力</p>
+    <div class="skills-wrap fade-in">
+      <span class="skill-tag">🌤️ 天气查询</span>
+      <span class="skill-tag">📝 待办管理</span>
+      <span class="skill-tag">📅 日程管理</span>
+      <span class="skill-tag">🔍 百度搜索</span>
+      <span class="skill-tag">🤖 多智能体协作</span>
+      <span class="skill-tag">🌐 浏览器控制</span>
+      <span class="skill-tag">📄 PDF 处理</span>
+      <span class="skill-tag">📊 Excel 处理</span>
+      <span class="skill-tag">📧 邮件管理</span>
+      <span class="skill-tag">📰 新闻资讯</span>
+      <span class="skill-tag">🔄 自我进化</span>
+      <span class="skill-tag">💓 主动关怀</span>
+      <span class="skill-tag">⏰ 定时任务</span>
+    </div>
+  </section>
+
+  <!-- Tech -->
+  <section>
+    <h2 class="section-title fade-in">⚙️ 技术栈</h2>
+    <p class="section-sub fade-in">驱动阿毛运行的底层技术</p>
+    <div class="tech-grid fade-in">
+      <div class="tech-item"><span class="icon">🧠</span>MiMo-V2.5<br><small style="color:var(--text2)">小米大模型</small></div>
+      <div class="tech-item"><span class="icon">🐾</span>QwenPaw<br><small style="color:var(--text2)">AI Agent 框架</small></div>
+      <div class="tech-item"><span class="icon">🐳</span>Docker<br><small style="color:var(--text2)">容器部署</small></div>
+      <div class="tech-item"><span class="icon">💻</span>SolarisNas<br><small style="color:var(--text2)">Debian 12</small></div>
+      <div class="tech-item"><span class="icon">💬</span>微信<br><small style="color:var(--text2)">消息频道</small></div>
+      <div class="tech-item"><span class="icon">🔌</span>SkillHub<br><small style="color:var(--text2)">技能市场</small></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>🐾 阿毛 · 大哥的 AI 助手</p>
+    <p style="margin-top: 0.5rem;">
+      Powered by <a href="#">MiMo-V2.5</a> &amp; <a href="#">QwenPaw</a>
+      · Built with ❤️
+    </p>
+    <p style="margin-top: 1rem; font-size: 0.7rem;">2026 · All rights reserved</p>
+  </footer>
+
+  <script>
+    // Typing effect
+    const texts = [
+      '你好，我是阿毛 👋',
+      '大哥的 AI 助手',
+      '大内总管，管着四个小伙伴',
+      '有什么需要帮忙的？',
+      '直接说，别客气 😄'
+    ];
+    let textIndex = 0, charIndex = 0, isDeleting = false;
+    const typingEl = document.getElementById('typing');
+
+    function type() {
+      const current = texts[textIndex];
+      if (isDeleting) {
+        typingEl.textContent = current.substring(0, charIndex--);
+      } else {
+        typingEl.textContent = current.substring(0, charIndex++);
+      }
+
+      let delay = isDeleting ? 30 : 80;
+
+      if (!isDeleting && charIndex === current.length + 1) {
+        delay = 2000;
+        isDeleting = true;
+      } else if (isDeleting && charIndex < 0) {
+        isDeleting = false;
+        textIndex = (textIndex + 1) % texts.length;
+        delay = 500;
+      }
+
+      setTimeout(type, delay);
+    }
+    type();
+
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
