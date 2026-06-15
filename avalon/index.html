@@ -111,6 +111,14 @@
     .status-bar .online { color: #22c55e; }
     .status-bar .offline { color: #e74c3c; }
 
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem;
+      background: transparent; border: 1px solid #3a3a6a; color: #aaa;
+      cursor: pointer; transition: all 0.3s; margin-bottom: 1rem;
+    }
+    .back-btn:hover { border-color: #6c5ce7; color: #a78bfa; }
+
     @media (max-width: 500px) {
       .quest-slot { width: 50px; height: 50px; }
       .quest-slot .num { font-size: 1rem; }
@@ -156,6 +164,7 @@
 
     <!-- Lobby -->
     <div class="screen" id="screen-lobby">
+      <button class="back-btn" onclick="backToMenu()">← 返回</button>
       <div class="header">
         <h1>🏠 等待大厅</h1>
         <p id="lobby-role"></p>
@@ -182,6 +191,7 @@
 
     <!-- Night -->
     <div class="screen" id="screen-night">
+      <button class="back-btn" onclick="backToMenu()">← 返回</button>
       <div class="header">
         <h1>🌙 夜晚阶段</h1>
         <p id="night-instruction"></p>
@@ -199,6 +209,7 @@
 
     <!-- Game -->
     <div class="screen" id="screen-game">
+      <button class="back-btn" onclick="confirmQuit()">← 退出游戏</button>
       <div class="header">
         <h1>⚔️ 第 <span id="round-num">1</span> 轮</h1>
         <p id="game-header-info"></p>
@@ -233,6 +244,7 @@
 
     <!-- End -->
     <div class="screen" id="screen-end">
+      <button class="back-btn" onclick="location.reload()">← 返回主页</button>
       <div class="header"><h1 id="end-title"></h1></div>
       <div class="card" id="end-card"></div>
       <div class="card">
@@ -1026,6 +1038,26 @@ function toast(msg, bg) { const d=document.createElement('div'); d.className='to
 function addLog(t) { G.log = G.log || []; G.log.push(t); const l=document.getElementById('game-log'); if(l){l.innerHTML=G.log.map(x=>'<div>'+x+'</div>').join(''); l.scrollTop=l.scrollHeight;} }
 function broadcast(data) { Object.values(peerConns).forEach(c => { try{c.send(data)}catch(e){} }); }
 function showStatus(msg) { document.getElementById('status-bar').style.display='block'; document.getElementById('status-text').textContent=msg; }
+
+function backToMenu() {
+  if (confirm('确定退出当前游戏吗？')) {
+    // Disconnect all peers
+    Object.values(peerConns).forEach(c => { try{c.close()}catch(e){} });
+    peerConns = {};
+    if (peer) { try{peer.destroy()}catch(e){} peer = null; }
+    if (conn) { try{conn.close()}catch(e){} conn = null; }
+    players = [];
+    G = {};
+    isHost = false;
+    isLocal = false;
+    document.getElementById('status-bar').style.display = 'none';
+    show('screen-menu');
+  }
+}
+
+function confirmQuit() {
+  if (confirm('确定退出游戏吗？')) backToMenu();
+}
 
 // Override reveal/night for online
 const origReveal = revealRole;
