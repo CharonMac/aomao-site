@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>阿瓦隆 - 经典桌游</title>
+  <title>阿瓦隆 - 联机版</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -13,197 +14,169 @@
       min-height: 100vh;
     }
     .container { max-width: 800px; margin: 0 auto; padding: 1rem; }
-
     .screen { display: none; }
     .screen.active { display: block; animation: fadeIn 0.4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
     .header { text-align: center; padding: 1.5rem 0; border-bottom: 1px solid #1e1e3a; margin-bottom: 1.5rem; }
-    .header h1 { font-size: 2rem; background: linear-gradient(135deg, #e74c3c, #f39c12); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .header h1 { font-size: 2rem; background: linear-gradient(135deg,#e74c3c,#f39c12); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .header p { color: #888; font-size: 0.85rem; margin-top: 0.3rem; }
 
-    .card {
-      background: #12122a;
-      border: 1px solid #1e1e3a;
-      border-radius: 12px;
-      padding: 1.2rem;
-      margin-bottom: 1rem;
-    }
+    .card { background: #12122a; border: 1px solid #1e1e3a; border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
     .card h3 { font-size: 1rem; margin-bottom: 0.8rem; color: #f39c12; }
 
     input[type="text"] {
-      background: #1a1a35;
-      border: 1px solid #2a2a55;
-      border-radius: 8px;
-      padding: 0.6rem 1rem;
-      color: #fff;
-      font-size: 0.9rem;
-      width: 100%;
-      outline: none;
-      margin-bottom: 0.5rem;
-      transition: border-color 0.3s;
+      background: #1a1a35; border: 1px solid #2a2a55; border-radius: 8px;
+      padding: 0.6rem 1rem; color: #fff; font-size: 0.9rem; width: 100%; outline: none; margin-bottom: 0.5rem;
     }
     input:focus { border-color: #6c5ce7; }
 
-    .btn {
-      display: inline-block;
-      padding: 0.7rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      color: #fff;
-    }
-    .btn-primary { background: linear-gradient(135deg, #6c5ce7, #a855f7); }
-    .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); }
-    .btn-danger { background: linear-gradient(135deg, #e74c3c, #dc2626); }
-    .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .btn-outline { background: transparent; border: 1px solid #3a3a6a; color: #aaa; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+    .btn { display:inline-block; padding:0.7rem 1.5rem; border:none; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.3s; color:#fff; }
+    .btn-primary { background:linear-gradient(135deg,#6c5ce7,#a855f7); }
+    .btn-success { background:linear-gradient(135deg,#22c55e,#16a34a); }
+    .btn-danger { background:linear-gradient(135deg,#e74c3c,#dc2626); }
+    .btn-outline { background:transparent; border:1px solid #3a3a6a; color:#aaa; }
+    .btn:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,0.3); }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+    .btn-group { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem; }
 
-    .player-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+    .player-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin:0.8rem 0; }
     .player-tag {
-      padding: 0.5rem 0.9rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      border: 2px solid #2a2a55;
-      transition: all 0.3s;
-      user-select: none;
-      background: transparent;
-      color: #ccc;
+      padding:0.5rem 0.9rem; border-radius:20px; font-size:0.85rem; cursor:pointer;
+      border:2px solid #2a2a55; transition:all 0.3s; user-select:none; background:transparent; color:#ccc;
     }
-    .player-tag.selected { border-color: #6c5ce7; background: rgba(108,92,231,0.25); color: #a78bfa; }
-    .player-tag.leader { border-color: #f59e0b; }
+    .player-tag.selected { border-color:#6c5ce7; background:rgba(108,92,231,0.25); color:#a78bfa; }
+    .player-tag.leader { border-color:#f59e0b; }
 
-    .quest-board {
-      display: flex;
-      justify-content: center;
-      gap: 0.6rem;
-      margin: 1.5rem 0;
-      flex-wrap: wrap;
-    }
+    .quest-board { display:flex; justify-content:center; gap:0.6rem; margin:1.5rem 0; flex-wrap:wrap; }
     .quest-slot {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 3px solid #2a2a55;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 700;
-      transition: all 0.3s;
+      width:60px; height:60px; border-radius:50%; border:3px solid #2a2a55;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:700; transition:all 0.3s;
     }
-    .quest-slot .num { font-size: 1.2rem; }
-    .quest-slot .size { font-size: 0.6rem; color: #888; }
-    .quest-slot.current { border-color: #6c5ce7; box-shadow: 0 0 15px rgba(108,92,231,0.3); }
-    .quest-slot.success { border-color: #22c55e; background: rgba(34,197,94,0.15); }
-    .quest-slot.fail { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
-    .quest-slot.locked { opacity: 0.35; }
+    .quest-slot .num { font-size:1.2rem; }
+    .quest-slot .size { font-size:0.6rem; color:#888; }
+    .quest-slot.current { border-color:#6c5ce7; box-shadow:0 0 15px rgba(108,92,231,0.3); }
+    .quest-slot.success { border-color:#22c55e; background:rgba(34,197,94,0.15); }
+    .quest-slot.fail { border-color:#e74c3c; background:rgba(231,76,60,0.15); }
+    .quest-slot.locked { opacity:0.35; }
 
-    .role-card {
-      text-align: center;
-      padding: 2rem;
-      border-radius: 16px;
-      margin: 1rem 0;
-    }
-    .role-card.good { background: linear-gradient(135deg, #0a2a1a, #0f3a20); border: 2px solid #22c55e; }
-    .role-card.evil { background: linear-gradient(135deg, #2a0a0a, #3a0f0f); border: 2px solid #e74c3c; }
-    .role-card .emoji { font-size: 3rem; margin-bottom: 0.5rem; }
-    .role-card h2 { font-size: 1.4rem; margin-bottom: 0.3rem; }
-    .role-card p { font-size: 0.85rem; color: #aaa; line-height: 1.5; }
+    .role-card { text-align:center; padding:2rem; border-radius:16px; margin:1rem 0; }
+    .role-card.good { background:linear-gradient(135deg,#0a2a1a,#0f3a20); border:2px solid #22c55e; }
+    .role-card.evil { background:linear-gradient(135deg,#2a0a0a,#3a0f0f); border:2px solid #e74c3c; }
+    .role-card .emoji { font-size:3rem; margin-bottom:0.5rem; }
+    .role-card h2 { font-size:1.4rem; margin-bottom:0.3rem; }
+    .role-card p { font-size:0.85rem; color:#aaa; line-height:1.5; }
 
-    .info-panel {
-      background: #1a1a35;
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 0.8rem 0;
-      font-size: 0.85rem;
-      line-height: 1.7;
-    }
-    .info-panel strong { color: #f39c12; }
+    .info-panel { background:#1a1a35; border-radius:8px; padding:1rem; margin:0.8rem 0; font-size:0.85rem; line-height:1.7; }
+    .info-panel strong { color:#f39c12; }
 
-    .log { max-height: 200px; overflow-y: auto; font-size: 0.8rem; color: #888; }
-    .log div { padding: 0.3rem 0; border-bottom: 1px solid #1a1a35; }
+    .log { max-height:200px; overflow-y:auto; font-size:0.8rem; color:#888; }
+    .log div { padding:0.3rem 0; border-bottom:1px solid #1a1a35; }
 
     .phase {
-      text-align: center;
-      padding: 0.5rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      background: #1a1a35;
-      border: 1px solid #2a2a55;
+      text-align:center; padding:0.5rem; border-radius:8px; font-size:0.85rem; font-weight:600;
+      margin-bottom:1rem; background:#1a1a35; border:1px solid #2a2a55;
     }
 
     .toast {
-      position: fixed;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 0.6rem 1.5rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      z-index: 1000;
-      color: #fff;
-      animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+      position:fixed; top:1rem; left:50%; transform:translateX(-50%);
+      padding:0.6rem 1.5rem; border-radius:8px; font-size:0.85rem; font-weight:600;
+      z-index:1000; color:#fff; animation:toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
     }
-    @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
-    @keyframes toastOut { to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+    @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-20px)} }
+    @keyframes toastOut { to{opacity:0;transform:translateX(-50%) translateY(-20px)} }
 
-    .vote-bar { display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0; font-size: 0.85rem; }
-    .vote-bar .name { width: 70px; text-align: right; color: #aaa; }
-    .vote-bar .icon { font-size: 1.2rem; }
+    .vote-bar { display:flex; align-items:center; gap:0.5rem; margin:0.3rem 0; font-size:0.85rem; }
+    .vote-bar .name { width:70px; text-align:right; color:#aaa; }
+    .vote-bar .icon { font-size:1.2rem; }
+
+    .room-code {
+      font-size: 2.5rem; font-weight: 700; letter-spacing: 0.3rem; text-align: center;
+      background: linear-gradient(135deg, #f59e0b, #e74c3c); -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; margin: 1rem 0;
+    }
+
+    .player-waiting {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0;
+      border-bottom: 1px solid #1e1e3a; font-size: 0.9rem;
+    }
+    .player-waiting .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .player-waiting .host { color: #f59e0b; font-size: 0.75rem; }
+
+    .status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 1rem;
+      background: #12122a; border-top: 1px solid #1e1e3a; font-size: 0.75rem;
+      color: #888; text-align: center; z-index: 100;
+    }
+    .status-bar .online { color: #22c55e; }
+    .status-bar .offline { color: #e74c3c; }
 
     @media (max-width: 500px) {
       .quest-slot { width: 50px; height: 50px; }
       .quest-slot .num { font-size: 1rem; }
+      .room-code { font-size: 2rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
 
-    <!-- Setup -->
-    <div class="screen active" id="screen-setup">
+    <!-- Menu -->
+    <div class="screen active" id="screen-menu">
       <div class="header">
         <h1>⚔️ 阿瓦隆</h1>
-        <p>经典社交推理桌游</p>
+        <p>经典社交推理桌游 · 联机版</p>
       </div>
       <div class="card">
-        <h3>👥 选择玩家人数</h3>
-        <div class="btn-group" id="player-count-btns"></div>
-      </div>
-      <div class="card" id="setup-players" style="display:none">
-        <h3>✏️ 输入玩家名字</h3>
-        <div id="player-inputs"></div>
+        <h3>🎮 开始游戏</h3>
+        <input type="text" id="input-name" placeholder="你的名字" maxlength="10">
         <div class="btn-group">
-          <button class="btn btn-primary" onclick="startGame()">🎮 开始游戏</button>
+          <button class="btn btn-primary" onclick="createRoom()">🏠 创建房间</button>
+          <button class="btn btn-success" onclick="showJoin()">🔗 加入房间</button>
+          <button class="btn btn-outline" onclick="startLocal()">📱 本地模式</button>
+        </div>
+      </div>
+      <div class="card" id="join-card" style="display:none">
+        <h3>🔗 输入房间号</h3>
+        <input type="text" id="input-room" placeholder="6位房间号" maxlength="6" style="text-transform:uppercase;text-align:center;font-size:1.5rem;letter-spacing:0.3rem">
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="joinRoom()">加入</button>
         </div>
       </div>
       <div class="card">
-        <h3>📖 规则说明</h3>
+        <h3>📖 规则</h3>
         <div class="info-panel">
           <strong>阵营：</strong>亚瑟阵营（好人） vs 暗影阵营（坏人）<br>
-          <strong>目标：</strong>率先完成3个任务的一方获胜<br>
+          <strong>目标：</strong>率先完成3个任务<br>
           <strong>流程：</strong>队长组队 → 全员投票 → 执行任务<br>
-          <strong>关键角色：</strong><br>
-          🧙 梅林（好人）— 知道坏人是谁，但不能暴露<br>
-          🗡️ 刺客（坏人）— 游戏结束刺杀梅林可翻盘<br>
-          🛡️ 忠臣（好人）— 知道梅林是谁<br>
-          👹 莫德雷德（坏人）— 梅林看不到他<br>
-          🔮 莫甘娜（坏人）— 冒充梅林<br>
-          👻 奥伯伦（坏人）— 其他坏人不知道他<br>
-          ⚔️ 忠臣/爪牙 — 普通成员
+          🧙 梅林知道坏人，🗡️ 刺客刺杀梅林可翻盘
         </div>
+      </div>
+    </div>
+
+    <!-- Lobby -->
+    <div class="screen" id="screen-lobby">
+      <div class="header">
+        <h1>🏠 等待大厅</h1>
+        <p id="lobby-role"></p>
+      </div>
+      <div class="card" id="room-card" style="display:none">
+        <h3>📢 分享房间号给朋友</h3>
+        <div class="room-code" id="room-code-display"></div>
+        <p style="text-align:center;font-size:0.8rem;color:#888">房间号已复制到剪贴板</p>
+      </div>
+      <div class="card">
+        <h3>👥 玩家列表 (<span id="player-count">0</span>/10)</h3>
+        <div id="player-waiting-list"></div>
+      </div>
+      <div class="card">
+        <h3>⚙️ 游戏设置</h3>
+        <div id="game-settings"></div>
+      </div>
+      <div class="card" id="local-settings" style="display:none">
+        <h3>👥 选择玩家人数</h3>
+        <div class="btn-group" id="local-count-btns"></div>
+        <div id="local-name-inputs" style="margin-top:0.5rem"></div>
       </div>
     </div>
 
@@ -211,15 +184,15 @@
     <div class="screen" id="screen-night">
       <div class="header">
         <h1>🌙 夜晚阶段</h1>
-        <p>请将设备递给 <strong id="night-player"></strong></p>
+        <p id="night-instruction"></p>
       </div>
-      <div class="card" id="night-card">
+      <div class="card">
         <button class="btn btn-primary night-reveal-btn" onclick="revealRole()" style="width:100%;font-size:1.1rem;padding:1rem">
           👁️ 点击查看身份
         </button>
         <div id="role-reveal" style="display:none"></div>
-        <div class="btn-group" style="margin-top:1rem; display:none" id="night-done-btn">
-          <button class="btn btn-success" onclick="nightDone()" style="width:100%">✅ 已记住，递给下一位</button>
+        <div class="btn-group" style="margin-top:1rem;display:none" id="night-done-btn">
+          <button class="btn btn-success" onclick="nightDone()" style="width:100%">✅ 已记住</button>
         </div>
       </div>
     </div>
@@ -228,27 +201,22 @@
     <div class="screen" id="screen-game">
       <div class="header">
         <h1>⚔️ 第 <span id="round-num">1</span> 轮</h1>
-        <p>队长 <strong id="leader-name"></strong> 选择任务队伍</p>
+        <p id="game-header-info"></p>
       </div>
       <div class="quest-board" id="quest-board"></div>
-      <div class="phase" id="phase-text">👥 组队阶段</div>
+      <div class="phase" id="phase-text"></div>
 
-      <div class="card" id="team-card">
-        <h3>👥 选择队员（需 <span id="team-size"></span> 人）</h3>
+      <div class="card" id="team-card" style="display:none">
+        <h3 id="team-title"></h3>
         <div class="player-list" id="team-select"></div>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="btn-confirm-team" onclick="confirmTeam()" disabled>✅ 确认队伍</button>
-        </div>
+        <div class="btn-group" id="team-btns"></div>
       </div>
 
       <div class="card" id="vote-card" style="display:none">
         <h3>🗳️ 投票表决</h3>
-        <p style="font-size:0.85rem;color:#aaa;margin-bottom:0.5rem">你同意这个队伍吗？</p>
+        <p style="font-size:0.85rem;color:#aaa;margin-bottom:0.5rem" id="vote-desc"></p>
         <div id="vote-result"></div>
-        <div class="btn-group" id="vote-btns">
-          <button class="btn btn-success" onclick="castVote(true)">👍 同意</button>
-          <button class="btn btn-danger" onclick="castVote(false)">👎 反对</button>
-        </div>
+        <div class="btn-group" id="vote-btns"></div>
       </div>
 
       <div class="card" id="quest-card" style="display:none">
@@ -265,9 +233,7 @@
 
     <!-- End -->
     <div class="screen" id="screen-end">
-      <div class="header">
-        <h1 id="end-title"></h1>
-      </div>
+      <div class="header"><h1 id="end-title"></h1></div>
       <div class="card" id="end-card"></div>
       <div class="card">
         <h3>📜 完整日志</h3>
@@ -279,110 +245,332 @@
     </div>
   </div>
 
+  <div class="status-bar" id="status-bar" style="display:none">
+    <span class="online">●</span> 已连接 · <span id="status-text">在线</span>
+  </div>
+
 <script>
-const QUEST = { 5:[2,3,2,3,3], 6:[2,3,4,3,4], 7:[2,3,3,4,4], 8:[3,4,4,5,5], 9:[3,4,4,5,5], 10:[3,4,4,5,5] };
-const ROLE_CFG = {
-  5:{good:3,evil:2,special:['merlin','assassin','mordred','percival']},
-  6:{good:4,evil:2,special:['merlin','assassin','mordred','percival']},
-  7:{good:4,evil:3,special:['merlin','assassin','mordred','morgana','percival']},
-  8:{good:5,evil:3,special:['merlin','assassin','mordred','morgana','oberon']},
-  9:{good:6,evil:3,special:['merlin','assassin','mordred','morgana','oberon','percival']},
-  10:{good:6,evil:4,special:['merlin','assassin','mordred','morgana','oberon','percival']}
+// ========== Config ==========
+const QUEST={5:[2,3,2,3,3],6:[2,3,4,3,4],7:[2,3,3,4,4],8:[3,4,4,5,5],9:[3,4,4,5,5],10:[3,4,4,5,5]};
+const ROLE_CFG={
+  5:{good:3,evil:2,sp:['merlin','assassin','mordred','percival']},
+  6:{good:4,evil:2,sp:['merlin','assassin','mordred','percival']},
+  7:{good:4,evil:3,sp:['merlin','assassin','mordred','morgana','percival']},
+  8:{good:5,evil:3,sp:['merlin','assassin','mordred','morgana','oberon']},
+  9:{good:6,evil:3,sp:['merlin','assassin','mordred','morgana','oberon','percival']},
+  10:{good:6,evil:4,sp:['merlin','assassin','mordred','morgana','oberon','percival']}
 };
-const ROLES = {
-  merlin:  {n:'梅林',e:'🧙',s:'good',d:'你知道所有坏人（莫德雷德除外），但绝不能暴露！'},
+const ROLES={
+  merlin:{n:'梅林',e:'🧙',s:'good',d:'你知道所有坏人（莫德雷德除外），但绝不能暴露！'},
   percival:{n:'忠臣',e:'🛡️',s:'good',d:'你知道梅林是谁。'},
-  loyal:   {n:'忠臣',e:'⚔️',s:'good',d:'你是亚瑟的忠诚骑士。'},
-  assassin:{n:'刺客',e:'🗡️',s:'evil',d:'你负责刺杀梅林，找到他！'},
-  mordred: {n:'莫德雷德',e:'👹',s:'evil',d:'你是暗影之主，梅林看不到你！'},
-  morgana: {n:'莫甘娜',e:'🔮',s:'evil',d:'你冒充梅林迷惑忠臣。'},
-  oberon:  {n:'奥伯伦',e:'👻',s:'evil',d:'你是独立行动的，其他坏人不知道你。'},
-  minion:  {n:'爪牙',e:'🦅',s:'evil',d:'你是莫德雷德的爪牙。'}
+  loyal:{n:'忠臣',e:'⚔️',s:'good',d:'你是亚瑟的忠诚骑士。'},
+  assassin:{n:'刺客',e:'🗡️',s:'evil',d:'你负责刺杀梅林！'},
+  mordred:{n:'莫德雷德',e:'👹',s:'evil',d:'你是暗影之主，梅林看不到你！'},
+  morgana:{n:'莫甘娜',e:'🔮',s:'evil',d:'你冒充梅林迷惑忠臣。'},
+  oberon:{n:'奥伯伦',e:'👻',s:'evil',d:'你是独立行动的，其他坏人不知道你。'},
+  minion:{n:'爪牙',e:'🦅',s:'evil',d:'你是莫德雷德的爪牙。'}
 };
 
-let S = {};
+// ========== State ==========
+let myName = '', myId = '', isHost = false, isLocal = false;
+let roomCode = '', peer = null, conn = null;
+let players = [], G = {};
+let peerConns = {}; // host: connections to guests
+let pendingVotes = {};
 
-function init() {
-  const btns = document.getElementById('player-count-btns');
+// ========== PeerJS ==========
+function makeId(prefix) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = prefix;
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random()*chars.length)];
+  return id;
+}
+
+function genRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+function createPeer(id) {
+  return new Promise((resolve, reject) => {
+    const p = new Peer(id, { debug: 0 });
+    p.on('open', () => resolve(p));
+    p.on('error', e => reject(e));
+    setTimeout(() => reject(new Error('连接超时')), 10000);
+  });
+}
+
+// ========== Create Room ==========
+async function createRoom() {
+  myName = document.getElementById('input-name').value.trim();
+  if (!myName) { toast('请输入名字', '#e74c3c'); return; }
+
+  roomCode = genRoomCode();
+  myId = 'av-' + roomCode;
+  isHost = true;
+
+  try {
+    peer = await createPeer(myId);
+  } catch(e) {
+    toast('连接失败: ' + e.message, '#e74c3c');
+    return;
+  }
+
+  players = [{ id: myId, name: myName, host: true }];
+  myId = myId;
+
+  peer.on('connection', handleNewConnection);
+
+  show('screen-lobby');
+  document.getElementById('lobby-role').textContent = '你是房主';
+  document.getElementById('room-card').style.display = 'block';
+  document.getElementById('room-code-display').textContent = roomCode;
+  document.getElementById('game-settings').innerHTML = `
+    <p style="font-size:0.85rem;color:#aaa;margin-bottom:0.5rem">等待玩家加入，选择人数后点击开始</p>
+    <div class="btn-group" id="count-btns"></div>
+  `;
+  const cb = document.getElementById('count-btns');
   for (let i = 5; i <= 10; i++) {
     const b = document.createElement('button');
     b.className = 'btn btn-outline';
     b.textContent = i + '人';
-    b.onclick = () => pickCount(i);
-    btns.appendChild(b);
+    b.onclick = () => { G.n = i; document.querySelectorAll('#count-btns .btn').forEach(x=>x.className='btn btn-outline'); b.className='btn btn-primary'; checkCanStart(); };
+    cb.appendChild(b);
+  }
+
+  updateLobby();
+
+  // Try copy to clipboard
+  try { navigator.clipboard.writeText(roomCode); } catch(e) {}
+
+  showStatus('房间已创建，等待玩家加入...');
+}
+
+function handleNewConnection(c) {
+  c.on('open', () => {
+    peerConns[c.peer] = c;
+    c.on('data', d => handleHostData(c.peer, d));
+    // Send current state
+    c.send({ type: 'welcome', players, roomCode, n: G.n || 0 });
+  });
+  c.on('close', () => {
+    delete peerConns[c.peer];
+    players = players.filter(p => p.id !== c.peer);
+    updateLobby();
+    broadcast({ type: 'player-left', players });
+  });
+}
+
+function handleHostData(fromId, data) {
+  switch(data.type) {
+    case 'join':
+      if (players.length >= 10) { return; }
+      if (!players.find(p => p.id === fromId)) {
+        players.push({ id: fromId, name: data.name, host: false });
+        updateLobby();
+        broadcast({ type: 'player-joined', players, newPlayer: data.name });
+        toast(data.name + ' 加入了房间', '#22c55e');
+      }
+      break;
+    case 'vote':
+      handleHostVote(fromId, data);
+      break;
+    case 'quest-vote':
+      handleHostQuestVote(fromId, data);
+      break;
   }
 }
 
-function pickCount(n) {
-  S.n = n;
-  document.querySelectorAll('#player-count-btns .btn').forEach(b => b.className = b.textContent === n+'人' ? 'btn btn-primary' : 'btn btn-outline');
-  const c = document.getElementById('player-inputs');
+function checkCanStart() {
+  // We'll check when starting
+}
+
+function updateLobby() {
+  document.getElementById('player-count').textContent = players.length;
+  const list = document.getElementById('player-waiting-list');
+  list.innerHTML = players.map(p =>
+    `<div class="player-waiting"><div class="dot"></div>${p.name}${p.host?'<span class="host">👑 房主</span>':''}</div>`
+  ).join('');
+
+  const btns = document.getElementById('team-btns');
+  if (isHost) {
+    document.getElementById('team-btns') // check if start button exists
+  }
+}
+
+// ========== Join Room ==========
+function showJoin() {
+  document.getElementById('join-card').style.display = 'block';
+}
+
+async function joinRoom() {
+  myName = document.getElementById('input-name').value.trim();
+  roomCode = document.getElementById('input-room').value.trim().toUpperCase();
+  if (!myName || !roomCode) { toast('请填写完整', '#e74c3c'); return; }
+
+  myId = 'av-' + makeId('G');
+  try {
+    peer = await createPeer(myId);
+  } catch(e) {
+    toast('连接失败: ' + e.message, '#e74c3c');
+    return;
+  }
+
+  conn = peer.connect('av-' + roomCode);
+  conn.on('open', () => {
+    conn.send({ type: 'join', name: myName });
+    conn.on('data', handleGuestData);
+  });
+  conn.on('error', e => toast('连接错误', '#e74c3c'));
+
+  show('screen-lobby');
+  document.getElementById('lobby-role').textContent = '等待房主开始...';
+  document.getElementById('room-card').style.display = 'none';
+  document.getElementById('game-settings').innerHTML = '<p style="font-size:0.85rem;color:#aaa">等待房主开始游戏...</p>';
+  showStatus('已连接到房间 ' + roomCode);
+}
+
+function handleGuestData(data) {
+  switch(data.type) {
+    case 'welcome':
+      players = data.players;
+      G.n = data.n;
+      updateLobby();
+      break;
+    case 'player-joined':
+    case 'player-left':
+      players = data.players;
+      updateLobby();
+      if (data.newPlayer) toast(data.newPlayer + ' 加入了', '#22c55e');
+      break;
+    case 'game-start':
+      G = data.G;
+      players = data.players;
+      myRole = data.myRole;
+      myIdx = data.myIdx;
+      showNightOnline();
+      break;
+    case 'all-roles-seen':
+      G.phase = 'team';
+      startTeamOnline();
+      break;
+    case 'team-selected':
+      G.team = data.team;
+      G.leader = data.leader;
+      startVoteOnline();
+      break;
+    case 'vote-result':
+      showVoteResultOnline(data);
+      break;
+    case 'start-quest':
+      startQuestOnline();
+      break;
+    case 'quest-vote-request':
+      showQuestVoteOnline();
+      break;
+    case 'quest-result':
+      showQuestResultOnline(data);
+      break;
+    case 'game-over':
+      showGameOverOnline(data);
+      break;
+    case 'toast':
+      toast(data.msg, data.color || '#6c5ce7');
+      break;
+    case 'log':
+      addLog(data.text);
+      break;
+  }
+}
+
+// ========== Local Mode ==========
+function startLocal() {
+  isLocal = true;
+  myName = document.getElementById('input-name').value.trim() || '主持人';
+  show('screen-lobby');
+  document.getElementById('lobby-role').textContent = '本地模式 · ' + myName;
+  document.getElementById('room-card').style.display = 'none';
+  document.getElementById('game-settings').style.display = 'none';
+  document.getElementById('local-settings').style.display = 'block';
+
+  const cb = document.getElementById('local-count-btns');
+  for (let i = 5; i <= 10; i++) {
+    const b = document.createElement('button');
+    b.className = 'btn btn-outline';
+    b.textContent = i + '人';
+    b.onclick = () => {
+      G.n = i;
+      document.querySelectorAll('#local-count-btns .btn').forEach(x=>x.className='btn btn-outline');
+      b.className = 'btn btn-primary';
+      buildLocalInputs(i);
+    };
+    cb.appendChild(b);
+  }
+}
+
+function buildLocalInputs(n) {
+  const c = document.getElementById('local-name-inputs');
   c.innerHTML = '';
   for (let i = 0; i < n; i++) {
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.placeholder = '玩家 ' + (i+1);
-    inp.id = 'p'+i;
+    inp.id = 'lp'+i;
     c.appendChild(inp);
   }
-  document.getElementById('setup-players').style.display = 'block';
+  c.innerHTML += '<div class="btn-group"><button class="btn btn-primary" onclick="startLocalGame()">🎮 开始游戏</button></div>';
 }
 
-function startGame() {
-  S.players = [];
-  for (let i = 0; i < S.n; i++) {
-    const name = document.getElementById('p'+i).value.trim() || ('玩家'+(i+1));
-    S.players.push({name, alive:true, role:null});
+function startLocalGame() {
+  players = [];
+  for (let i = 0; i < G.n; i++) {
+    const name = document.getElementById('lp'+i).value.trim() || ('玩家'+(i+1));
+    players.push({ name, alive:true, role:null });
   }
-  assignRoles();
-  S.round = 1;
-  S.leader = 0;
-  S.results = [];
-  S.okCount = 0;
-  S.failCount = 0;
-  S.rejects = 0;
-  S.log = [];
-  S.nightIdx = 0;
+  assignRolesLocal();
+  Object.assign(G, { round:1, leader:0, results:[], okCount:0, failCount:0, rejects:0, log:[], nightIdx:0, team:[], votes:[], phase:'night' });
   show('screen-night');
-  showNight();
+  showNightLocal();
 }
 
-function assignRoles() {
-  const cfg = ROLE_CFG[S.n];
-  let pool = [...cfg.special];
-  const gS = pool.filter(r => ROLES[r].s==='good').length;
-  const eS = pool.filter(r => ROLES[r].s==='evil').length;
-  for (let i = 0; i < cfg.good-gS; i++) pool.push('loyal');
-  for (let i = 0; i < cfg.evil-eS; i++) pool.push('minion');
+function assignRolesLocal() {
+  const cfg = ROLE_CFG[G.n];
+  let pool = [...cfg.sp];
+  const gS = pool.filter(r=>ROLES[r].s==='good').length;
+  const eS = pool.filter(r=>ROLES[r].s==='evil').length;
+  for (let i=0;i<cfg.good-gS;i++) pool.push('loyal');
+  for (let i=0;i<cfg.evil-eS;i++) pool.push('minion');
   shuffle(pool);
-  const idx = S.players.map((_,i)=>i);
+  const idx = players.map((_,i)=>i);
   shuffle(idx);
-  for (let i = 0; i < pool.length; i++) S.players[idx[i]].role = pool[i];
+  for (let i=0;i<pool.length;i++) players[idx[i]].role = pool[i];
 }
 
-function shuffle(a) { for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
 
-// === Night ===
-function showNight() {
-  if (S.nightIdx >= S.players.length) { startTeam(); return; }
-  document.getElementById('night-player').textContent = S.players[S.nightIdx].name;
+// ========== Night - Local ==========
+function showNightLocal() {
+  if (G.nightIdx >= players.length) { startTeamLocal(); return; }
+  document.getElementById('night-instruction').innerHTML = '请将设备递给 <strong>' + players[G.nightIdx].name + '</strong>';
   document.getElementById('role-reveal').style.display = 'none';
   document.getElementById('night-done-btn').style.display = 'none';
   document.querySelector('.night-reveal-btn').style.display = 'block';
 }
 
-function revealRole() {
-  const p = S.players[S.nightIdx];
+function revealRoleLocal() {
+  const p = players[G.nightIdx];
   const info = ROLES[p.role];
   let extra = '';
   if (p.role==='merlin') {
-    const bad = S.players.filter(x=>ROLES[x.role].s==='evil'&&x.role!=='mordred');
+    const bad = players.filter(x=>ROLES[x.role].s==='evil'&&x.role!=='mordred');
     extra = '你知道的坏人：' + bad.map(x=>x.name).join('、');
   } else if (p.role==='percival') {
-    const m = S.players.find(x=>x.role==='merlin');
+    const m = players.find(x=>x.role==='merlin');
     extra = '梅林是：' + m.name;
   } else if (info.s==='evil') {
-    const allies = S.players.filter((x,i)=>i!==S.nightIdx && ROLES[x.role].s==='evil' && x.role!=='oberon');
+    const allies = players.filter((x,i)=>i!==G.nightIdx && ROLES[x.role].s==='evil' && x.role!=='oberon');
     extra = allies.length ? ('同伙：' + allies.map(x=>x.name+'('+ROLES[x.role].n+')').join('、')) : '你是独立行动的';
   }
 
@@ -391,7 +579,7 @@ function revealRole() {
       <div class="emoji">${info.e}</div>
       <h2>${info.n}</h2>
       <p>${info.d}</p>
-      ${extra ? '<p style="margin-top:0.8rem;color:#f39c12;font-weight:600">'+extra+'</p>' : ''}
+      ${extra?'<p style="margin-top:0.8rem;color:#f39c12;font-weight:600">'+extra+'</p>':''}
       <p style="margin-top:0.5rem;font-size:0.75rem;color:#666">阵营：${info.s==='good'?'✅ 亚瑟阵营':'❌ 暗影阵营'}</p>
     </div>`;
   document.getElementById('role-reveal').style.display = 'block';
@@ -399,35 +587,36 @@ function revealRole() {
   document.querySelector('.night-reveal-btn').style.display = 'none';
 }
 
-function nightDone() { S.nightIdx++; showNight(); }
+function nightDoneLocal() { G.nightIdx++; showNightLocal(); }
 
-// === Team ===
-function startTeam() {
-  S.team = [];
-  S.phase = 'team';
-  document.getElementById('round-num').textContent = S.round;
-  document.getElementById('leader-name').textContent = S.players[S.leader].name;
+// ========== Team - Local ==========
+function startTeamLocal() {
+  G.phase = 'team';
+  G.team = [];
+  document.getElementById('round-num').textContent = G.round;
+  document.getElementById('game-header-info').innerHTML = '队长 <strong>' + players[G.leader].name + '</strong> 选择任务队伍';
   document.getElementById('phase-text').textContent = '👥 组队阶段';
   document.getElementById('vote-card').style.display = 'none';
   document.getElementById('quest-card').style.display = 'none';
   document.getElementById('team-card').style.display = 'block';
-  document.getElementById('btn-confirm-team').disabled = true;
-  renderBoard();
-  renderPlayers();
+  document.getElementById('team-title').innerHTML = '👥 选择队员（需 <span id="team-size"></span> 人）';
+  document.getElementById('team-btns').innerHTML = '<button class="btn btn-primary" id="btn-confirm" onclick="confirmTeamLocal()" disabled>✅ 确认队伍</button>';
+  renderBoardLocal();
+  renderPlayersLocal();
   show('screen-game');
 }
 
-function renderBoard() {
+function renderBoardLocal() {
   const b = document.getElementById('quest-board');
-  const sizes = QUEST[S.n];
+  const sizes = QUEST[G.n];
   b.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
+  for (let i=0;i<5;i++) {
     const d = document.createElement('div');
     d.className = 'quest-slot';
-    if (i < S.results.length) {
-      d.classList.add(S.results[i]?'success':'fail');
-      d.innerHTML = '<div class="num">'+(S.results[i]?'✓':'✗')+'</div>';
-    } else if (i === S.round-1) {
+    if (i < G.results.length) {
+      d.classList.add(G.results[i]?'success':'fail');
+      d.innerHTML = '<div class="num">'+(G.results[i]?'✓':'✗')+'</div>';
+    } else if (i === G.round-1) {
       d.classList.add('current');
       d.innerHTML = '<div class="num">'+(i+1)+'</div><div class="size">'+sizes[i]+'人</div>';
     } else {
@@ -438,142 +627,473 @@ function renderBoard() {
   }
   const ct = document.createElement('div');
   ct.style.cssText = 'width:100%;text-align:center;font-size:0.85rem;margin-top:0.5rem;color:#aaa;';
-  ct.innerHTML = '✅ '+S.okCount+'/3 &nbsp; ❌ '+S.failCount+'/3 &nbsp; 🗳️ 否决 '+S.rejects+'/4';
+  ct.innerHTML = '✅ '+G.okCount+'/3 &nbsp; ❌ '+G.failCount+'/3 &nbsp; 🗳️ 否决 '+G.rejects+'/5';
   b.appendChild(ct);
-  document.getElementById('team-size').textContent = sizes[S.round-1];
+  document.getElementById('team-size').textContent = sizes[G.round-1];
 }
 
-function renderPlayers() {
+function revealRole() { isLocal ? revealRoleLocal() : null; }
+function nightDone() { isLocal ? nightDoneLocal() : null; }
+
+function renderPlayersLocal() {
   const c = document.getElementById('team-select');
   c.innerHTML = '';
-  S.players.forEach((p,i) => {
-    if (!p.alive) return;
+  const needed = QUEST[G.n][G.round-1];
+  players.forEach((p,i) => {
     const d = document.createElement('div');
-    d.className = 'player-tag' + (S.team.includes(i)?' selected':'') + (i===S.leader?' leader':'');
-    d.textContent = (i===S.leader?'👑 ':'') + p.name;
+    d.className = 'player-tag' + (G.team.includes(i)?' selected':'') + (i===G.leader?' leader':'');
+    d.textContent = (i===G.leader?'👑 ':'') + p.name;
     d.onclick = () => {
-      const needed = QUEST[S.n][S.round-1];
-      if (S.team.includes(i)) S.team = S.team.filter(x=>x!==i);
-      else if (S.team.length < needed) S.team.push(i);
-      document.getElementById('btn-confirm-team').disabled = S.team.length !== needed;
-      renderPlayers();
+      if (G.team.includes(i)) G.team = G.team.filter(x=>x!==i);
+      else if (G.team.length < needed) G.team.push(i);
+      document.getElementById('btn-confirm').disabled = G.team.length !== needed;
+      renderPlayersLocal();
     };
     c.appendChild(d);
   });
 }
 
-function confirmTeam() {
-  S.phase = 'vote';
-  S.votes = [];
+function confirmTeamLocal() {
+  G.phase = 'vote';
+  G.votes = [];
   document.getElementById('phase-text').textContent = '🗳️ 投票阶段';
   document.getElementById('team-card').style.display = 'none';
   document.getElementById('vote-card').style.display = 'block';
-  document.getElementById('vote-btns').style.display = 'flex';
+  document.getElementById('vote-desc').textContent = '请所有人投票（私下操作）';
   document.getElementById('vote-result').innerHTML = '';
-  const names = S.team.map(i=>S.players[i].name).join('、');
-  addLog('👑 队伍：' + names);
-  toast('请所有人投票！','#6c5ce7');
+  document.getElementById('vote-btns').innerHTML = `
+    <button class="btn btn-success" onclick="castVoteLocal(true)">👍 同意</button>
+    <button class="btn btn-danger" onclick="castVoteLocal(false)">👎 反对</button>
+  `;
+  addLog('👑 队伍：' + G.team.map(i=>players[i].name).join('、'));
+  toast('请所有人投票','#6c5ce7');
 }
 
-function castVote(yes) {
-  S.votes.push(yes);
-  if (S.votes.length < S.players.length) {
-    toast(S.votes.length+'/'+S.players.length+' 已投票','#6c5ce7');
+let localVoteCount = 0;
+function castVoteLocal(yes) {
+  G.votes.push(yes);
+  localVoteCount++;
+  if (localVoteCount < players.length) {
+    toast(localVoteCount + '/' + players.length + ' 已投票','#6c5ce7');
     return;
   }
   const res = document.getElementById('vote-result');
-  res.innerHTML = S.votes.map((v,i)=>'<div class="vote-bar"><span class="name">'+S.players[i].name+'</span><span class="icon">'+(v?'👍':'👎')+'</span></div>').join('');
-  document.getElementById('vote-btns').style.display = 'none';
-  const y = S.votes.filter(v=>v).length, n = S.votes.length - y;
+  res.innerHTML = G.votes.map((v,i)=>'<div class="vote-bar"><span class="name">'+players[i].name+'</span><span class="icon">'+(v?'👍':'👎')+'</span></div>').join('');
+  document.getElementById('vote-btns').innerHTML = '';
+  const y = G.votes.filter(v=>v).length, n = G.votes.length - y;
   addLog('投票：'+y+'同意 '+n+'反对');
+  localVoteCount = 0;
 
   setTimeout(() => {
-    if (y > n) {
-      startQuest();
-    } else {
-      S.rejects++;
+    if (y > n) { startQuestLocal(); }
+    else {
+      G.rejects++;
       addLog('❌ 队伍被否决！');
-      if (S.rejects >= 5) { endGame(false, '否决次数过多，暗影阵营获胜！'); return; }
-      nextLeader();
-      startTeam();
+      if (G.rejects >= 5) { endGameLocal(false,'否决次数过多'); return; }
+      nextLeaderLocal();
+      startTeamLocal();
     }
-  }, 2000);
+  }, 2500);
 }
 
-function startQuest() {
-  S.phase = 'quest';
-  S.questIdx = 0;
-  S.questVotes = [];
-  const evils = S.team.filter(i => ROLES[S.players[i].role].s === 'evil');
+function startQuestLocal() {
+  G.phase = 'quest';
+  G.questIdx = 0;
+  G.questVotes = [];
   document.getElementById('phase-text').textContent = '⚔️ 执行任务';
   document.getElementById('vote-card').style.display = 'none';
   document.getElementById('quest-card').style.display = 'block';
-  document.getElementById('quest-instruction').textContent = '任务队伍成员依次投票：';
-
-  const btns = document.getElementById('quest-btns');
-  showQuestPlayer();
+  showQuestPlayerLocal();
 }
 
-function showQuestPlayer() {
-  if (S.questIdx >= S.team.length) { finishQuest(); return; }
-  const idx = S.team[S.questIdx];
-  const p = S.players[idx];
+function showQuestPlayerLocal() {
+  if (G.questIdx >= G.team.length) { finishQuestLocal(); return; }
+  const idx = G.team[G.questIdx];
+  const p = players[idx];
   const isEvil = ROLES[p.role].s === 'evil';
   document.getElementById('quest-instruction').textContent = p.name + ' 请投票：';
   const btns = document.getElementById('quest-btns');
-  btns.innerHTML = '<button class="btn btn-success" onclick="qVote(true,'+isEvil+')">✅ 成功</button>';
-  if (isEvil) btns.innerHTML += ' <button class="btn btn-danger" onclick="qVote(false,true)">❌ 失败</button>';
+  btns.innerHTML = '<button class="btn btn-success" onclick="qVoteLocal(true,'+isEvil+')">✅ 成功</button>';
+  if (isEvil) btns.innerHTML += ' <button class="btn btn-danger" onclick="qVoteLocal(false,true)">❌ 失败</button>';
 }
 
-function qVote(success, isEvil) {
+function qVoteLocal(success, isEvil) {
   if (!isEvil) success = true;
-  S.questVotes.push(success);
-  S.questIdx++;
-  showQuestPlayer();
+  G.questVotes.push(success);
+  G.questIdx++;
+  showQuestPlayerLocal();
 }
 
-function finishQuest() {
-  const fails = S.questVotes.filter(v=>!v).length;
+function finishQuestLocal() {
+  const fails = G.questVotes.filter(v=>!v).length;
   const ok = fails === 0;
-  S.results.push(ok);
-  if (ok) { S.okCount++; addLog('✅ 任务成功！'); }
-  else { S.failCount++; addLog('❌ 任务失败！('+fails+'票反对)'); }
-  renderBoard();
+  G.results.push(ok);
+  if (ok) { G.okCount++; addLog('✅ 任务成功！'); }
+  else { G.failCount++; addLog('❌ 任务失败！('+fails+'票反对)'); }
+  renderBoardLocal();
 
-  if (S.okCount >= 3) { setTimeout(()=>endGame(true,'亚瑟阵营完成3个任务！'),1500); return; }
-  if (S.failCount >= 3) { setTimeout(()=>endGame(false,'暗影阵营破坏了3个任务！'),1500); return; }
+  if (G.okCount >= 3) { setTimeout(()=>endGameLocal(true,'亚瑟阵营完成3个任务！'),1500); return; }
+  if (G.failCount >= 3) { setTimeout(()=>endGameLocal(false,'暗影阵营破坏了3个任务！'),1500); return; }
 
-  S.round++;
-  nextLeader();
-  setTimeout(startTeam, 1500);
+  G.round++;
+  nextLeaderLocal();
+  setTimeout(startTeamLocal, 1500);
 }
 
-function nextLeader() {
-  do { S.leader = (S.leader + 1) % S.n; } while (!S.players[S.leader].alive);
-}
+function nextLeaderLocal() { do { G.leader = (G.leader+1)%players.length; } while (!players[G.leader].alive); }
 
-function endGame(goodWin, reason) {
+function endGameLocal(goodWin, reason) {
   show('screen-end');
   const t = document.getElementById('end-title');
   t.textContent = goodWin ? '🎉 亚瑟阵营胜利！' : '👹 暗影阵营胜利！';
   t.style.background = goodWin ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#e74c3c,#dc2626)';
   t.style.webkitBackgroundClip = 'text';
-
   let h = '<h3>'+reason+'</h3><div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem">';
-  S.players.forEach(p => {
+  players.forEach(p => {
     const r = ROLES[p.role];
     h += '<div style="padding:0.5rem 0.8rem;border-radius:8px;font-size:0.8rem;border:1px solid '+(r.s==='good'?'#22c55e':'#e74c3c')+';background:'+(r.s==='good'?'rgba(34,197,94,0.1)':'rgba(231,76,60,0.1)')+'">'+r.e+' <strong>'+p.name+'</strong> - '+r.n+'</div>';
   });
   h += '</div>';
   document.getElementById('end-card').innerHTML = h;
-  document.getElementById('end-log').innerHTML = S.log.map(l=>'<div>'+l+'</div>').join('');
+  document.getElementById('end-log').innerHTML = G.log.map(l=>'<div>'+l+'</div>').join('');
 }
 
-function addLog(t) { S.log.push(t); const l=document.getElementById('game-log'); if(l){l.innerHTML=S.log.map(x=>'<div>'+x+'</div>').join(''); l.scrollTop=l.scrollHeight;} }
+// ========== Online helpers ==========
+function showNightOnline() {
+  const p = players[myIdx];
+  document.getElementById('night-instruction').innerHTML = '你的角色';
+  document.getElementById('role-reveal').style.display = 'none';
+  document.getElementById('night-done-btn').style.display = 'none';
+  document.querySelector('.night-reveal-btn').style.display = 'block';
+  show('screen-night');
+}
+
+function revealRoleOnline() {
+  const info = ROLES[myRole];
+  let extra = '';
+  if (myRole==='merlin') {
+    const bad = players.filter(x=>ROLES[x.role].s==='evil'&&x.role!=='mordred');
+    extra = '你知道的坏人：' + bad.map(x=>x.name).join('、');
+  } else if (myRole==='percival') {
+    const m = players.find(x=>x.role==='merlin');
+    extra = '梅林是：' + m.name;
+  } else if (info.s==='evil') {
+    const allies = players.filter((x,i)=>i!==myIdx && ROLES[x.role].s==='evil' && x.role!=='oberon');
+    extra = allies.length ? ('同伙：' + allies.map(x=>x.name+'('+ROLES[x.role].n+')').join('、')) : '你是独立行动的';
+  }
+  document.getElementById('role-reveal').innerHTML = `
+    <div class="role-card ${info.s}">
+      <div class="emoji">${info.e}</div>
+      <h2>${info.n}</h2><p>${info.d}</p>
+      ${extra?'<p style="margin-top:0.8rem;color:#f39c12;font-weight:600">'+extra+'</p>':''}
+      <p style="margin-top:0.5rem;font-size:0.75rem;color:#666">阵营：${info.s==='good'?'✅ 亚瑟阵营':'❌ 暗影阵营'}</p>
+    </div>`;
+  document.getElementById('role-reveal').style.display = 'block';
+  document.getElementById('night-done-btn').style.display = 'flex';
+  document.querySelector('.night-reveal-btn').style.display = 'none';
+}
+
+function nightDoneOnline() { conn.send({ type: 'role-seen' }); toast('已确认，等待其他人...','#6c5ce7'); }
+
+function startTeamOnline() {
+  show('screen-game');
+  document.getElementById('round-num').textContent = G.round;
+  document.getElementById('game-header-info').innerHTML = '队长 <strong>' + players[G.leader].name + '</strong> 选择任务队伍';
+  document.getElementById('phase-text').textContent = G.leader === myIdx ? '👥 你是队长，请选择队员' : '👥 等待队长选择队伍...';
+  document.getElementById('vote-card').style.display = 'none';
+  document.getElementById('quest-card').style.display = 'none';
+  document.getElementById('team-card').style.display = G.leader === myIdx ? 'block' : 'none';
+  if (G.leader === myIdx) {
+    document.getElementById('team-title').innerHTML = '👥 选择队员（需 <span id="team-size"></span> 人）';
+    G.team = [];
+    document.getElementById('team-btns').innerHTML = '<button class="btn btn-primary" id="btn-confirm" onclick="confirmTeamOnline()" disabled>✅ 确认队伍</button>';
+    renderPlayersOnline();
+    document.getElementById('team-size').textContent = QUEST[G.n][G.round-1];
+  }
+  renderBoardOnline();
+}
+
+function renderBoardOnline() {
+  const b = document.getElementById('quest-board');
+  const sizes = QUEST[G.n];
+  b.innerHTML = '';
+  for (let i=0;i<5;i++) {
+    const d = document.createElement('div');
+    d.className = 'quest-slot';
+    if (i < G.results.length) { d.classList.add(G.results[i]?'success':'fail'); d.innerHTML='<div class="num">'+(G.results[i]?'✓':'✗')+'</div>'; }
+    else if (i === G.round-1) { d.classList.add('current'); d.innerHTML='<div class="num">'+(i+1)+'</div><div class="size">'+sizes[i]+'人</div>'; }
+    else { d.classList.add('locked'); d.innerHTML='<div class="num">'+(i+1)+'</div><div class="size">'+sizes[i]+'人</div>'; }
+    b.appendChild(d);
+  }
+  const ct = document.createElement('div');
+  ct.style.cssText='width:100%;text-align:center;font-size:0.85rem;margin-top:0.5rem;color:#aaa;';
+  ct.innerHTML='✅ '+G.okCount+'/3 &nbsp; ❌ '+G.failCount+'/3 &nbsp; 🗳️ '+G.rejects+'/5';
+  b.appendChild(ct);
+}
+
+function renderPlayersOnline() {
+  const c = document.getElementById('team-select');
+  c.innerHTML = '';
+  const needed = QUEST[G.n][G.round-1];
+  players.forEach((p,i) => {
+    const d = document.createElement('div');
+    d.className = 'player-tag' + (G.team.includes(i)?' selected':'') + (i===G.leader?' leader':'');
+    d.textContent = (i===G.leader?'👑 ':'') + p.name;
+    d.onclick = () => {
+      if (G.team.includes(i)) G.team = G.team.filter(x=>x!==i);
+      else if (G.team.length < needed) G.team.push(i);
+      document.getElementById('btn-confirm').disabled = G.team.length !== needed;
+      renderPlayersOnline();
+    };
+    c.appendChild(d);
+  });
+}
+
+function confirmTeamOnline() { conn.send({ type: 'team-selected', team: G.team }); toast('队伍已提交','#22c55e'); }
+
+function startVoteOnline() {
+  G.votes = [];
+  document.getElementById('team-card').style.display = 'none';
+  document.getElementById('vote-card').style.display = 'block';
+  document.getElementById('vote-desc').textContent = '你同意这个队伍吗？';
+  document.getElementById('vote-result').innerHTML = '';
+  document.getElementById('vote-btns').innerHTML = `
+    <button class="btn btn-success" onclick="voteOnline(true)">👍 同意</button>
+    <button class="btn btn-danger" onclick="voteOnline(false)">👎 反对</button>
+  `;
+  document.getElementById('phase-text').textContent = '🗳️ 投票阶段';
+}
+
+function voteOnline(yes) {
+  conn.send({ type: 'vote', yes });
+  document.getElementById('vote-btns').innerHTML = '<p style="color:#888;font-size:0.85rem">已投票，等待其他人...</p>';
+}
+
+function showVoteResultOnline(data) {
+  document.getElementById('vote-result').innerHTML = data.votes.map((v,i)=>'<div class="vote-bar"><span class="name">'+players[i].name+'</span><span class="icon">'+(v?'👍':'👎')+'</span></div>').join('');
+  document.getElementById('vote-btns').innerHTML = '';
+  setTimeout(() => { if (!data.approved) { nextLeaderOnline(); startTeamOnline(); } }, 2500);
+}
+
+function nextLeaderOnline() { G.leader = (G.leader+1)%players.length; }
+
+function startQuestOnline() {
+  G.phase = 'quest';
+  document.getElementById('phase-text').textContent = '⚔️ 执行任务';
+  document.getElementById('vote-card').style.display = 'none';
+  document.getElementById('quest-card').style.display = 'block';
+  const inTeam = G.team.includes(myIdx);
+  if (inTeam) {
+    const isEvil = ROLES[myRole].s === 'evil';
+    document.getElementById('quest-instruction').textContent = '你投票执行任务：';
+    document.getElementById('quest-btns').innerHTML = '<button class="btn btn-success" onclick="questVoteOnline(true,'+isEvil+')">✅ 成功</button>' +
+      (isEvil ? ' <button class="btn btn-danger" onclick="questVoteOnline(false,true)">❌ 失败</button>' : '');
+  } else {
+    document.getElementById('quest-instruction').textContent = '你不在任务队伍中，等待结果...';
+    document.getElementById('quest-btns').innerHTML = '';
+  }
+}
+
+function questVoteOnline(success, isEvil) {
+  if (!isEvil) success = true;
+  conn.send({ type: 'quest-vote', success });
+  document.getElementById('quest-btns').innerHTML = '<p style="color:#888;font-size:0.85rem">已投票，等待队友...</p>';
+}
+
+function showQuestResultOnline(data) {
+  addLog(data.ok ? '✅ 任务成功！' : '❌ 任务失败！');
+  renderBoardOnline();
+  if (data.gameOver) {
+    setTimeout(() => {
+      show('screen-end');
+      document.getElementById('end-title').textContent = data.goodWin ? '🎉 亚瑟阵营胜利！' : '👹 暗影阵营胜利！';
+      document.getElementById('end-title').style.background = data.goodWin ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#e74c3c,#dc2626)';
+      document.getElementById('end-title').style.webkitBackgroundClip = 'text';
+      document.getElementById('end-card').innerHTML = '<h3>' + data.reason + '</h3><p style="color:#888;margin-top:0.5rem">角色分配将在游戏结束后公布</p>';
+    }, 1500);
+  } else {
+    setTimeout(startTeamOnline, 1500);
+  }
+}
+
+function showGameOverOnline(data) {
+  show('screen-end');
+  document.getElementById('end-title').textContent = data.goodWin ? '🎉 亚瑟阵营胜利！' : '👹 暗影阵营胜利！';
+  document.getElementById('end-title').style.background = data.goodWin ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#e74c3c,#dc2626)';
+  document.getElementById('end-title').style.webkitBackgroundClip = 'text';
+  let h = '<h3>'+data.reason+'</h3><div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem">';
+  data.roles.forEach(r => {
+    h += '<div style="padding:0.5rem 0.8rem;border-radius:8px;font-size:0.8rem;border:1px solid '+(ROLES[r.role].s==='good'?'#22c55e':'#e74c3c')+';background:'+(ROLES[r.role].s==='good'?'rgba(34,197,94,0.1)':'rgba(231,76,60,0.1)')+'">'+ROLES[r.role].e+' <strong>'+r.name+'</strong> - '+ROLES[r.role].n+'</div>';
+  });
+  h += '</div>';
+  document.getElementById('end-card').innerHTML = h;
+}
+
+// ========== Host game logic ==========
+async function hostStartGame() {
+  if (!G.n || players.length < G.n) { toast('玩家人数不足', '#e74c3c'); return; }
+  assignRolesLocal();
+  Object.assign(G, { round:1, leader:0, results:[], okCount:0, failCount:0, rejects:0, team:[], votes:[], phase:'night' });
+
+  // Send each player their role
+  const playerInfos = players.map((p,i) => ({ id: p.id, name: p.name, role: p.role, idx: i }));
+  for (const pi of playerInfos) {
+    const c = peerConns[pi.id];
+    if (c) c.send({ type: 'game-start', G: { n:G.n, round:G.round, leader:G.leader, results:G.results, okCount:G.okCount, failCount:G.failCount, rejects:G.rejects }, players: playerInfos, myRole: pi.role, myIdx: pi.idx });
+  }
+  // Host also sees night
+  myRole = players[0].role;
+  myIdx = 0;
+  players.forEach(p => { if (!p.id) p.alive = true; p.role = ROLE_CFG[G.n] ? p.role : null; });
+  show('screen-night');
+  document.getElementById('night-instruction').innerHTML = '你的角色';
+  document.getElementById('role-reveal').style.display = 'none';
+  document.getElementById('night-done-btn').style.display = 'none';
+  document.querySelector('.night-reveal-btn').style.display = 'block';
+}
+
+function handleHostVote(fromId, data) {
+  if (!pendingVotes.votes) pendingVotes = { votes: {}, count: 0 };
+  pendingVotes.votes[fromId] = data.yes;
+  pendingVotes.count++;
+
+  if (pendingVotes.count >= players.length) {
+    const voteArr = players.map(p => pendingVotes.votes[p.id] !== false);
+    const y = voteArr.filter(v=>v).length;
+    const approved = y > players.length / 2;
+
+    // Broadcast result
+    broadcast({ type: 'vote-result', votes: voteArr.map((v,i) => v), approved });
+    addLog('投票：'+y+'同意 '+(players.length-y)+'反对');
+
+    pendingVotes = {};
+
+    if (approved) {
+      // Start quest phase
+      setTimeout(() => broadcast({ type: 'start-quest' }), 2500);
+    } else {
+      G.rejects++;
+      addLog('❌ 队伍被否决！');
+      if (G.rejects >= 5) { broadcast({ type: 'game-over', goodWin:false, reason:'否决次数过多', roles: players.map(p=>({name:p.name,role:p.role})) }); return; }
+      G.leader = (G.leader+1)%players.length;
+      setTimeout(() => broadcast({ type: 'all-roles-seen' }), 2500);
+    }
+  }
+}
+
+function handleHostQuestVote(fromId, data) {
+  if (!pendingVotes.qVotes) pendingVotes = { qVotes: [], count: 0 };
+  pendingVotes.qVotes.push(data.success);
+  pendingVotes.count++;
+
+  if (pendingVotes.count >= G.team.length) {
+    const fails = pendingVotes.qVotes.filter(v=>!v).length;
+    const ok = fails === 0;
+    G.results.push(ok);
+    if (ok) G.okCount++; else G.failCount++;
+    addLog(ok ? '✅ 任务成功！' : '❌ 任务失败！('+fails+'票反对)');
+
+    const gameOver = G.okCount >= 3 || G.failCount >= 3;
+    const goodWin = G.okCount >= 3;
+    const reason = goodWin ? '亚瑟阵营完成3个任务！' : '暗影阵营破坏了3个任务！';
+
+    broadcast({ type: 'quest-result', ok, gameOver, goodWin, reason, G: { round:G.round, results:G.results, okCount:G.okCount, failCount:G.failCount } });
+    pendingVotes = {};
+
+    if (gameOver) {
+      setTimeout(() => broadcast({ type: 'game-over', goodWin, reason, roles: players.map(p=>({name:p.name,role:p.role})) }), 2500);
+    } else {
+      G.round++;
+      G.leader = (G.leader+1)%players.length;
+    }
+  }
+}
+
+// ========== Host start button ==========
+function addHostStartBtn() {
+  const s = document.getElementById('game-settings');
+  if (s && isHost) {
+    const btnDiv = document.createElement('div');
+    btnDiv.className = 'btn-group';
+    btnDiv.innerHTML = '<button class="btn btn-primary" onclick="hostStartGame()" style="margin-top:0.5rem">🎮 开始游戏</button>';
+    s.appendChild(btnDiv);
+  }
+}
+
+// ========== Utils ==========
 function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function toast(msg, bg) { const d=document.createElement('div'); d.className='toast'; d.textContent=msg; d.style.background=bg||'#22c55e'; document.body.appendChild(d); setTimeout(()=>d.remove(),2500); }
+function addLog(t) { G.log = G.log || []; G.log.push(t); const l=document.getElementById('game-log'); if(l){l.innerHTML=G.log.map(x=>'<div>'+x+'</div>').join(''); l.scrollTop=l.scrollHeight;} }
+function broadcast(data) { Object.values(peerConns).forEach(c => { try{c.send(data)}catch(e){} }); }
+function showStatus(msg) { document.getElementById('status-bar').style.display='block'; document.getElementById('status-text').textContent=msg; }
 
-init();
+// Override reveal/night for online
+const origReveal = revealRole;
+const origNightDone = nightDone;
+
+// Patch night functions
+window.revealRole = function() {
+  if (!isLocal && conn) revealRoleOnline();
+  else revealRoleLocal();
+};
+window.nightDone = function() {
+  if (!isLocal && conn) nightDoneOnline();
+  else nightDoneLocal();
+};
+
+// Watch for host adding start button
+const lobbyObserver = new MutationObserver(() => {
+  if (isHost && document.getElementById('game-settings') && !document.getElementById('game-settings').querySelector('.btn-primary')) {
+    addHostStartBtn();
+  }
+});
+lobbyObserver.observe(document.getElementById('screen-lobby'), { childList: true, subtree: true });
+
+// Init local count buttons
+(function(){
+  const cb = document.getElementById('local-count-btns');
+  if (!cb) return;
+  for (let i = 5; i <= 10; i++) {
+    const b = document.createElement('button');
+    b.className = 'btn btn-outline';
+    b.textContent = i + '人';
+    b.onclick = () => {
+      G.n = i;
+      document.querySelectorAll('#local-count-btns .btn').forEach(x=>x.className='btn btn-outline');
+      b.className = 'btn btn-primary';
+      buildLocalInputs(i);
+    };
+    cb.appendChild(b);
+  }
+})();
+
+// Expose for HTML onclick
+window.createRoom = createRoom;
+window.showJoin = showJoin;
+window.joinRoom = joinRoom;
+window.startLocal = startLocal;
+window.startLocalGame = startLocalGame;
+window.confirmTeamLocal = confirmTeamLocal;
+window.castVoteLocal = castVoteLocal;
+window.qVoteLocal = qVoteLocal;
+window.voteOnline = voteOnline;
+window.confirmTeamOnline = confirmTeamOnline;
+window.questVoteOnline = questVoteOnline;
+window.hostStartGame = hostStartGame;
+
+// Make buildLocalInputs global
+window.buildLocalInputs = function(n) {
+  const c = document.getElementById('local-name-inputs');
+  c.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = '玩家 ' + (i+1);
+    inp.id = 'lp'+i;
+    c.appendChild(inp);
+  }
+  c.innerHTML += '<div class="btn-group"><button class="btn btn-primary" onclick="startLocalGame()">🎮 开始游戏</button></div>';
+};
 </script>
 </body>
 </html>
