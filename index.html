@@ -363,6 +363,96 @@
       text-decoration: none;
     }
 
+    /* ========== Theme Switcher ========== */
+    .theme-switcher {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .theme-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .theme-btn:hover {
+      transform: scale(1.2);
+      border-color: #fff;
+    }
+
+    .theme-btn.active {
+      border-color: #fff;
+      box-shadow: 0 0 12px rgba(255,255,255,0.3);
+    }
+
+    .theme-btn.dark { background: #0a0a0f; }
+    .theme-btn.midnight { background: linear-gradient(135deg, #0c0c2d, #1a0a3e); }
+    .theme-btn.ocean { background: linear-gradient(135deg, #0a1628, #0d2137); }
+    .theme-btn.forest { background: linear-gradient(135deg, #0a1a0a, #132613); }
+    .theme-btn.sunset { background: linear-gradient(135deg, #1a0a0a, #2d1010); }
+    .theme-btn.light { background: linear-gradient(135deg, #f0f0f5, #e0e0ea); }
+
+    body.theme-midnight {
+      --bg: #0c0c2d;
+      --card: #14143a;
+      --border: #2a2a5a;
+      --accent: #8b5cf6;
+      --accent2: #06b6d4;
+    }
+
+    body.theme-ocean {
+      --bg: #0a1628;
+      --card: #0f2035;
+      --border: #1a3050;
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+    }
+
+    body.theme-forest {
+      --bg: #0a1a0a;
+      --card: #0f250f;
+      --border: #1a3a1a;
+      --accent: #22c55e;
+      --accent2: #84cc16;
+    }
+
+    body.theme-sunset {
+      --bg: #1a0a0a;
+      --card: #251212;
+      --border: #3a1a1a;
+      --accent: #f59e0b;
+      --accent2: #ef4444;
+    }
+
+    body.theme-light {
+      --bg: #f0f0f5;
+      --card: #ffffff;
+      --border: #d0d0dd;
+      --accent: #6c5ce7;
+      --accent2: #00b894;
+      color: #333;
+    }
+
+    body.theme-light .hero h1 {
+      background: linear-gradient(135deg, #333, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    body.theme-light .section-title { color: #222; }
+    body.theme-light .team-card h3 { color: #222; }
+    body.theme-light .typing { color: var(--accent); }
+    body.theme-light .theme-btn { border-color: #aaa; }
+    body.theme-light .theme-btn:hover { border-color: #333; }
+    body.theme-light .theme-btn.active { border-color: #333; box-shadow: 0 0 12px rgba(0,0,0,0.2); }
+
     /* ========== Responsive ========== */
     @media (max-width: 600px) {
       .hero h1 { font-size: 2rem; }
